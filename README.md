@@ -2,6 +2,10 @@
 
 # Email Legitimacy Checker
 
+## ✨ Live Preview
+
+![Demo](./demo/demo.gif)
+
 ## Overview
 
 The Email Legitimacy Checker is a full-stack application that allows users to verify the legitimacy of email addresses. It features a React frontend for user interaction and a Node.js/Express backend for processing email checks.
