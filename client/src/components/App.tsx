@@ -7,7 +7,7 @@ const App: React.FC = () => {
     const [results, setResults] = useState<any>(null);
 
     const handleEmailChange = (newEmail: string) => {
-        setEmail(newEmail);
+        setEmail(newEmail.trim());
     };
 
     const handleResultsChange = (newResults: any) => {
@@ -15,10 +15,19 @@ const App: React.FC = () => {
     };
 
     return (
-        <div>
-            <h1>Email Legitimacy Checker</h1>
-            <EmailChecker email={email} onEmailChange={handleEmailChange} onResultsChange={handleResultsChange} />
-            {results && <Results results={results} />}
+        <div className="max-w-2xl mx-auto p-6">
+            <h1 className="text-3xl font-bold text-blue-600 mb-8 text-center">
+                Email Legitimacy Checker
+            </h1>
+            <div className="space-y-6">
+                <EmailChecker 
+                    email={email} 
+                    onEmailChange={handleEmailChange} 
+                    onResultsChange={handleResultsChange}
+                    isDisabled={!email} 
+                />
+                {results && <Results results={results} />}
+            </div>
         </div>
     );
 };
