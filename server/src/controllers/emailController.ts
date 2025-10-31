@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getEmailAnalysis } from '../services/emailService'; 
+import { getEmailAnalysisUsingOPENAI, checkEmailLegitimacyDynamic } from '../services/emailService'; 
 
 export const checkEmailHandler = async (req: Request, res: Response): Promise<Response> => {
     const { email } = req.body;
@@ -9,7 +9,9 @@ export const checkEmailHandler = async (req: Request, res: Response): Promise<Re
     }
 
     try {
-        const result = await getEmailAnalysis(email); 
+        const result = await getEmailAnalysisUsingOPENAI(email); 
+        // const result = await checkEmailLegitimacyDynamic(email); 
+        checkEmailLegitimacyDynamic
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ error: 'An error occurred while checking the email' });

@@ -1,7 +1,8 @@
 import dns from 'dns/promises';
 import axios from 'axios';
+import whois from "whois-json";
 
-export const getEmailAnalysis = async (email: string): Promise<string> => {
+export const getEmailAnalysisUsingOPENAI = async (email: string): Promise<string> => {
   try {
     const domain = email.split('@')[1].toLowerCase();
 
@@ -52,4 +53,65 @@ export const getEmailAnalysis = async (email: string): Promise<string> => {
     console.error('Error checking email legitimacy:', err.response?.data || err.message);
     return 'Error analyzing email';
   }
-};
+}
+
+export const checkEmailLegitimacyDynamic = async (email: string): Promise<string> => {
+  try {
+    const domain = email.split("@")[1]?.toLowerCase();
+    if (!domain) return "❌ Invalid email format.";
+
+    // STEP 1: Verify domain has MX (mail) records
+    let hasMx = false;
+    try {
+      const records = await dns.resolveMx(domain);
+      hasMx = records.length > 0;
+    } catch {
+      return `❌ Domain "${domain}" has no mail servers. Likely fake.`;
+    }
+
+    if (!hasMx) {
+      return `❌ Domain "${domain}" cannot receive mail.`;
+    }
+
+    // STEP 2: Fetch WHOIS info dynamically
+    let whoisData: any = {};
+    try {
+      whoisData = await whois(domain, { follow: 3, timeout: 5000 });
+    } catch (e) {
+      console.warn(`⚠️ WHOIS lookup failed for ${domain}:`, e);
+    }
+
+    const registrar = whoisData.registrar || whoisData.OrgName || "";
+    const org = whoisData.org || whoisData.organization || "";
+
+    // STEP 3: Analyze WHOIS + domain name
+    const baseName = domain.split(".")[0];
+    const isNewDomain = whoisData.creationDate && new Date(whoisData.creationDate) > new Date(Date.now() - 90 * 24 * 3600 * 1000); // last 90 days
+    const isFreeEmail = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"].includes(domain);
+
+    if (isFreeEmail) {
+      return `⚠️ Generic domain (${domain}) — cannot verify ownership.`;
+    }
+
+    if (isNewDomain) {
+      return `⚠️ Domain "${domain}" is newly registered — possible temporary or scam email.`;
+    }
+
+    if (registrar || org) {
+      const orgText = (registrar + " " + org).toLowerCase();
+      if (orgText.includes(baseName)) {
+        return `✅ Legit: Domain "${domain}" is registered under organization "${org || registrar}".`;
+      } else {
+        return `⚠️ Domain "${domain}" appears valid but registration does not match "${baseName}". Review manually.`;
+      }
+    }
+
+    // STEP 4: Fallback verdict
+    return `⚠️ Domain "${domain}" is valid but no clear organization data found.`;
+
+  } catch (err: any) {
+    console.error("Error analyzing email:", err.message);
+    return "❌ Error analyzing email.";
+  }
+}
+
